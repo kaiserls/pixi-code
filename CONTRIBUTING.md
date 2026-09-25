@@ -42,6 +42,9 @@ npm run format          # Auto-fix formatting issues
 npm run lint -- --fix   # Auto-fix linting issues where possible
 ```
 
+After `npm install`, Husky installs a pre-commit hook that applies ESLint fixes and Prettier to staged files. The full
+lint, formatting, and compile checks run in CI.
+
 ## Making a contribution
 
 ### 1. Fork and branch

@@ -74,9 +74,14 @@
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
+        "prepare": "husky",
         "lint": "eslint src",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
+    },
+    "lint-staged": {
+        "src/**/*.ts": "eslint --fix",
+        "*.{ts,js,mjs,cjs,json,md,yml,yaml}": "prettier --write"
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
@@ -88,6 +93,8 @@
         "eslint": "^10.2.1",
         "eslint-plugin-simple-import-sort": "^13.0.0",
         "eslint-plugin-unused-imports": "^4.4.1",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.5.2",
         "prettier": "^3.8.3",
         "ts-loader": "^9.5.7",
         "typescript": "^6.0.3",
