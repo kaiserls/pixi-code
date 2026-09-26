@@ -74,6 +74,10 @@ Check the "Pixi Environment Manager" output channel:
 - Verify `pixi.toml` or `pyproject.toml` exists in project root
 - Run `pixi install` to ensure environments are set up
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and workflow details.
+
 ## License
 
 MIT
