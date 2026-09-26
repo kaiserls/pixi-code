@@ -9,6 +9,7 @@ import { findPythonExecutable } from '../common/findPython';
 import { traceError, traceInfo, traceVerbose } from '../common/logging';
 import { getWorkspacePersistentState } from '../common/persistentState';
 import { PIXI_MANAGER_ID, untildify } from '../common/utils';
+import { createListPixiPackagesArgs } from './commands';
 import { PixiEnvironment, PixiInfo, PixiPackage } from './types';
 
 const PIXI_WORKSPACE_KEY = `${PIXI_MANAGER_ID}:WORKSPACE_SELECTED`;
@@ -91,9 +92,7 @@ export async function runPixi(args: string[], options?: ch.SpawnOptions, token?:
 }
 
 export async function listPixiPackages(envName: string, projectPath: string): Promise<PixiPackage[]> {
-    const stdout = await runPixi(['list', '--no-install', '--frozen', '--json', '--environment', envName], {
-        cwd: projectPath,
-    });
+    const stdout = await runPixi(createListPixiPackagesArgs(envName), { cwd: projectPath });
     return JSON.parse(stdout);
 }
 

@@ -20,8 +20,12 @@ Code extension that integrates Pixi environments with the Python Environments ex
 
 3. **Development workflow**
     ```bash
-    npm run compile    # Build the extension
-    npm run watch      # Watch for changes during development
+    npm run compile       # Build the extension
+    npm run watch         # Watch for changes during development
+    npm run typecheck     # Check TypeScript types without creating output files
+    npm run test:unit     # Run fast Node.js unit tests
+    npm run test:vscode   # Run tests in an isolated VS Code extension host
+    npm test              # Run all checks and tests
     ```
 
 ## Code style and quality
@@ -41,6 +45,16 @@ Fixing issues:
 npm run format          # Auto-fix formatting issues
 npm run lint -- --fix   # Auto-fix linting issues where possible
 ```
+
+### Tests
+
+Use unit tests for pure TypeScript logic, such as Pixi command construction and parsing. They run directly in Node.js and
+must not import the `vscode` runtime module.
+
+Use VS Code extension-host tests for interactions with the `vscode` API, extension activation, and extension
+contributions. The first run downloads an isolated VS Code instance into `.vscode-test/`; later runs reuse it.
+
+The CI `test` job runs `npm test` before either pre-release publishing job is allowed to start.
 
 After `npm install`, Husky installs a pre-commit hook that applies ESLint fixes and Prettier to staged files. The full
 lint, formatting, and compile checks run in CI.
