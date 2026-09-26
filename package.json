@@ -72,7 +72,7 @@
         "watch": "webpack --watch",
         "package": "webpack --mode production --devtool hidden-source-map",
         "typecheck": "tsc -p . --noEmit",
-        "compile-tests": "tsc -p . --outDir out",
+        "compile-tests": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\" && tsc -p . --outDir out",
         "test:unit": "npm run compile-tests && node --test out/test/**/*.unit.test.js",
         "test:vscode": "npm run compile-tests && npm run compile && vscode-test",
         "test": "npm run typecheck && npm run test:unit && npm run test:vscode",

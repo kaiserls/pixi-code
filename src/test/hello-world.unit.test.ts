@@ -1,0 +1,6 @@
+import * as assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+test('runs unit tests', () => {
+    assert.equal(1 + 1, 2);
+});
