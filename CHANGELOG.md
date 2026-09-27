@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1]
 
+- Publish as `kaiserls.pixi-code` and fix Pixi manager registration with Python Environments
 - Keep valid Python environments visible when a Pixi environment targets an unsupported platform
 - Handle package refresh failures and use Pixi environment names for package queries
 - Support relative paths and `${workspaceFolder}` in `pixi-code.pixiExecutable`
 - Use the first workspace folder as the default working directory for Pixi commands
+- Improve activation diagnostics in the Pixi output channel
+- Exclude test fixtures and local Pixi environments from the extension package
+- Add automated tests and dependency security checks, and update vulnerable test dependencies
 
 ## [0.2.0]
 
