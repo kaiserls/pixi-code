@@ -1,5 +1,7 @@
 import * as assert from 'node:assert/strict';
 import { EventEmitter as NodeEventEmitter } from 'node:events';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { test } from 'node:test';
 
@@ -85,7 +87,7 @@ loader._load = function (request, parent, isMain) {
     }
     return originalLoad.call(this, request, parent, isMain);
 };
-const { refreshPixi } = require('../pixi/utils') as typeof import('../pixi/utils');
+const { getPixi, refreshPixi, runPixi } = require('../pixi/utils') as typeof import('../pixi/utils');
 const { PixiPackageManager } = require('../pixi/projectManager') as typeof import('../pixi/projectManager');
 const { registerLogger } = require('../common/logging') as typeof import('../common/logging');
 loader._load = originalLoad;
@@ -162,4 +164,35 @@ test('package refresh uses the Pixi environment name and keeps existing packages
     respond = () => ({ stdout: JSON.stringify([{ name: 'python', version: '3.13.0', is_explicit: true }]) });
     await manager.refresh(environment);
     assert.equal(environment.packages[0].version, '3.13.0');
+});
+
+test('configured Pixi paths resolve from workspaces and commands use a workspace cwd', async () => {
+    calls.length = 0;
+    const root = await mkdtemp(path.join(os.tmpdir(), 'pixi code '));
+    const firstFolder = path.join(root, 'first');
+    const secondFolder = path.join(root, 'second');
+    const secondExecutable = path.join(secondFolder, 'bin', 'pixi');
+    try {
+        await mkdir(path.dirname(secondExecutable), { recursive: true });
+        await mkdir(firstFolder);
+        await writeFile(secondExecutable, '');
+        workspaceFolders = [{ uri: { fsPath: firstFolder } }, { uri: { fsPath: secondFolder } }];
+        configuredExecutable = path.join('bin', 'pixi');
+        assert.equal(await getPixi(), secondExecutable);
+
+        respond = () => ({ stdout: 'pixi 0.67.0' });
+        assert.equal(await runPixi(['--version']), 'pixi 0.67.0');
+        assert.equal(calls[0].executable, `"${secondExecutable}"`);
+        assert.equal(calls[0].options.cwd, firstFolder);
+
+        await runPixi(['--version'], { cwd: secondFolder });
+        assert.equal(calls[1].options.cwd, secondFolder);
+
+        configuredExecutable = '${workspaceFolder}/bin/pixi';
+        assert.equal(await getPixi(), path.join(firstFolder, 'bin', 'pixi'));
+    } finally {
+        configuredExecutable = 'pixi';
+        workspaceFolders = [];
+        await rm(root, { recursive: true, force: true });
+    }
 });

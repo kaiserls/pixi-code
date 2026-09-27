@@ -1,10 +1,12 @@
 import { Package } from '@vscode/python-environments';
 import * as ch from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { CancellationError, CancellationToken, ThemeIcon, Uri, window, workspace } from 'vscode';
 import which from 'which';
 
 import { createDeferred } from '../common/deferred';
-import { quoteArgs } from '../common/execUtils';
+import { quoteArgs, quoteStringIfNecessary } from '../common/execUtils';
 import { findPythonExecutable } from '../common/findPython';
 import { traceError, traceInfo, traceVerbose } from '../common/logging';
 import { getWorkspacePersistentState } from '../common/persistentState';
@@ -27,7 +29,21 @@ export async function getPixi(): Promise<string> {
     const value = config.get<string>('pixiExecutable');
 
     if (value) {
-        return untildify(value);
+        let resolved = untildify(value);
+        if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
+            const firstFolder = workspace.workspaceFolders[0].uri.fsPath;
+            resolved = path.normalize(resolved.replace(/\$\{workspaceFolder\}/g, firstFolder));
+            if (!path.isAbsolute(resolved)) {
+                for (const folder of workspace.workspaceFolders) {
+                    const candidate = path.resolve(folder.uri.fsPath, resolved);
+                    if (fs.existsSync(candidate)) {
+                        resolved = candidate;
+                        break;
+                    }
+                }
+            }
+        }
+        return resolved;
     }
 
     const pixiPath = await findPixi();
@@ -48,7 +64,7 @@ async function _runPixi(
 ): Promise<string> {
     const deferred = createDeferred<string>();
     args = quoteArgs(args);
-    const proc = ch.spawn(pixi, args, { shell: true, ...options });
+    const proc = ch.spawn(quoteStringIfNecessary(pixi), args, { shell: true, ...options });
 
     const cancelDisposable = token?.onCancellationRequested(() => {
         proc.kill();
@@ -87,7 +103,12 @@ async function _runPixi(
 
 export async function runPixi(args: string[], options?: ch.SpawnOptions, token?: CancellationToken): Promise<string> {
     const pixi = await getPixi();
-    return _runPixi(pixi, args, options, token);
+    const defaultCwd = workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const spawnOptions: ch.SpawnOptions = {
+        ...(defaultCwd ? { cwd: defaultCwd } : {}),
+        ...options,
+    };
+    return _runPixi(pixi, args, spawnOptions, token);
 }
 
 export async function listPixiPackages(envName: string, projectPath: string): Promise<PixiPackage[]> {
