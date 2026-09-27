@@ -3,6 +3,7 @@ import { ExtensionContext, window } from 'vscode';
 
 import { registerLogger } from './common/logging';
 import { setPersistentState } from './common/persistentState';
+import { EXTENSION_ID } from './common/utils';
 import { PixiEnvManager } from './pixi/envManager';
 import { PixiPackageManager } from './pixi/projectManager';
 import { getPixi, runPixi } from './pixi/utils';
@@ -45,11 +46,11 @@ export async function activate(context: ExtensionContext) {
         setPersistentState(context);
 
         const manager = new PixiEnvManager(api, log);
-        context.subscriptions.push(api.registerEnvironmentManager(manager));
+        context.subscriptions.push(api.registerEnvironmentManager(manager, { extensionId: EXTENSION_ID }));
         log.info('Registered Pixi environment manager');
 
         const packageManager = new PixiPackageManager(api, log);
-        context.subscriptions.push(api.registerPackageManager(packageManager));
+        context.subscriptions.push(api.registerPackageManager(packageManager, { extensionId: EXTENSION_ID }));
         log.info('Registered Pixi package manager');
     } catch (error) {
         log.error('Pixi Code activation failed', error);
