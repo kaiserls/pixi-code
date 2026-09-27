@@ -113,7 +113,14 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
 
         const results = await Promise.all(
             pixiInfo.environments_info.map(async (pixiEnv) => {
-                const pixiPackages = await listPixiPackages(pixiEnv.name, projectPath);
+                let pixiPackages: PixiPackage[];
+                try {
+                    pixiPackages = await listPixiPackages(pixiEnv.name, projectPath);
+                } catch (error) {
+                    traceInfo(`Skipping Pixi environment '${pixiEnv.name}': ${error}`);
+                    return null;
+                }
+
                 const pythonPackage = pixiPackages.find((pkg) => pkg.name === 'python');
 
                 if (!pythonPackage) {
