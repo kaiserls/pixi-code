@@ -4,7 +4,7 @@
     "description": "Pixi support for the Python Environments extension",
     "icon": "assets/icon.png",
     "license": "MIT",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "homepage": "https://github.com/kaiserls/pixi-code",
     "repository": {
         "type": "git",
@@ -51,7 +51,7 @@
                 "pixi-code.pixiExecutable": {
                     "type": "string",
                     "default": "",
-                    "description": "Path to the Pixi executable. Leave empty to use auto-discovery.",
+                    "description": "Path to the Pixi executable. Supports ${workspaceFolder} and paths relative to a workspace folder. Leave empty to use auto-discovery.",
                     "scope": "machine-overridable"
                 }
             }
