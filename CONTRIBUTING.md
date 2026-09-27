@@ -19,31 +19,32 @@ Code extension that integrates Pixi environments with the Python Environments ex
     ```
 
 3. **Development workflow**
+
     ```bash
-    npm run compile    # Build the extension
-    npm run watch      # Watch for changes during development
+    npm run watch         # Rebuild while you edit
+    npm test              # Run the full validation suite before submitting
     ```
+
+    Press `F5` in VS Code to launch an Extension Development Host, then open a project containing `pixi.toml` or a
+    `pyproject.toml` with a `[tool.pixi]` table.
 
 ## Code style and quality
 
-This project maintains strict code quality standards using TypeScript, ESLint, and Prettier. All code must pass these
-quality checks before being merged.
+This project uses TypeScript, ESLint, and Prettier. `npm test` runs the required checks before its unit and extension
+tests. Husky formats and fixes staged files at commit time.
 
-```bash
-npm run lint            # Check for linting issues
-npm run format:check    # Check code formatting
-npm run compile         # Build and verify compilation
-```
+### Tests
 
-Fixing issues:
+Use unit tests for pure TypeScript logic, such as Pixi command construction and parsing. They run directly in Node.js and
+must not import the `vscode` runtime module.
 
-```bash
-npm run format          # Auto-fix formatting issues
-npm run lint -- --fix   # Auto-fix linting issues where possible
-```
+Use VS Code extension-host tests for interactions with the `vscode` API, extension activation, and extension
+contributions. The first run downloads an isolated VS Code instance into `.vscode-test/`; later runs reuse it.
 
-After `npm install`, Husky installs a pre-commit hook that applies ESLint fixes and Prettier to staged files. The full
-lint, formatting, and compile checks run in CI.
+For focused work, run `npm run test:unit` or `npm run test:vscode` individually. `npm run typecheck` is available when
+you only need TypeScript validation.
+
+The CI `test` job runs `npm test` before either pre-release publishing job is allowed to start.
 
 ## Making a contribution
 
@@ -63,16 +64,7 @@ git checkout -b feature/your-feature-name
 - **Code formatting**: Use Prettier to format your code
 - **Logging**: Use the provided logging utilities in `src/common/logging.ts`
 
-### 3. Extension testing
-
-Test the extension functionality:
-
-1. Press `F5` in launch VS Code in debug mode
-2. Open a project containing `pixi.toml` or `pyproject.toml`
-3. Verify Pixi environments are discovered and functional
-4. Test environment switching and terminal activation
-
-### 4. Commit and submit
+### 3. Commit and submit
 
 - Reference any related issues
 - Submit a pull request with detailed description
