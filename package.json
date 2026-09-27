@@ -85,7 +85,7 @@
     },
     "lint-staged": {
         "src/**/*.ts": "eslint --fix",
-        "*.{ts,js,mjs,cjs,json,md,yml,yaml}": "prettier --write"
+        "*": "prettier --write --ignore-unknown"
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
