@@ -8,7 +8,7 @@ Code extension that integrates Pixi environments with the Python Environments ex
 1. **Prerequisites**
     - Node.js 20+
     - VS Code with the Python Environments extension installed
-    - Pixi installed on your system
+    - [Pixi](https://pixi.prefix.dev/latest/installation/) installed on your system
 
 2. **Clone and setup**
 
