@@ -5,13 +5,13 @@
     "icon": "assets/icon.png",
     "license": "MIT",
     "version": "0.2.0",
-    "homepage": "https://github.com/renan-r-santos/pixi-code",
+    "homepage": "https://github.com/kaiserls/pixi-code",
     "repository": {
         "type": "git",
-        "url": "https://github.com/renan-r-santos/pixi-code"
+        "url": "https://github.com/kaiserls/pixi-code"
     },
     "bugs": {
-        "url": "https://github.com/renan-r-santos/pixi-code/issues"
+        "url": "https://github.com/kaiserls/pixi-code/issues"
     },
     "keywords": [
         "pixi",
@@ -31,7 +31,7 @@
         "workspaceContains:**/pixi.toml",
         "workspaceContains:**/pyproject.toml"
     ],
-    "publisher": "renan-r-santos",
+    "publisher": "kaiserls",
     "extensionDependencies": [
         "ms-python.vscode-python-envs"
     ],

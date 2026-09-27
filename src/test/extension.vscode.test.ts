@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import { PythonEnvironmentApi } from '@vscode/python-environments';
 import * as vscode from 'vscode';
 
-import { PIXI_MANAGER_ID } from '../common/utils';
+import { EXTENSION_ID, PIXI_MANAGER_ID } from '../common/utils';
 
 suite('Pixi Code extension', () => {
     test('contributes an empty default Pixi executable setting', () => {
@@ -17,7 +17,7 @@ suite('Pixi Code extension', () => {
     test('selects the Pixi default environment through Python Environments', async function () {
         this.timeout(120_000);
 
-        const pixiExtension = vscode.extensions.getExtension('renan-r-santos.pixi-code');
+        const pixiExtension = vscode.extensions.getExtension(EXTENSION_ID);
         const pythonEnvsExtension =
             vscode.extensions.getExtension<PythonEnvironmentApi>('ms-python.vscode-python-envs');
         assert.ok(pixiExtension, 'Pixi Code must be loaded in the extension test host');
