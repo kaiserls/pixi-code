@@ -1,0 +1,12 @@
+[workspace]
+authors = ["Lars Kaiser <lars.kaiser@posteo.de>"]
+channels = ["conda-forge"]
+name = "pixi-project"
+platforms = ["win-64", "linux-64"]
+version = "0.1.0"
+
+[tasks]
+hello_world = { cmd = "python hello_world.py", description = "Hello World Command" }
+
+[dependencies]
+python = "3.14.*"

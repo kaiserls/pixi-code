@@ -74,7 +74,7 @@
         "typecheck": "tsc -p . --noEmit",
         "compile-tests": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\" && tsc -p . --outDir out",
         "test:unit": "npm run compile-tests && node --test out/test/**/*.unit.test.js",
-        "test:vscode": "npm run compile-tests && npm run compile && vscode-test",
+        "test:vscode": "npm run compile-tests && npm run compile && pixi install --locked --manifest-path test/fixtures/pixi-project/pixi.toml && vscode-test",
         "test": "npm run typecheck && npm run test:unit && npm run test:vscode",
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run lint && npm run format:check",
