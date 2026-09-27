@@ -20,7 +20,7 @@ import {
     window,
 } from 'vscode';
 
-import { traceVerbose } from '../common/logging';
+import { traceInfo, traceVerbose } from '../common/logging';
 import { PixiEnvironment } from './types';
 import { listPixiPackages, pixiPkgsToPackages } from './utils';
 
@@ -72,13 +72,27 @@ export class PixiPackageManager implements PackageManager, Disposable {
                 }
 
                 const projectPath = path.dirname(environment.pixiInfo.project_info.manifest_path);
-                const pixiPackages = await listPixiPackages(environment.name, projectPath);
+                const pixiEnvironment = environment.pixiInfo.environments_info.find(
+                    (info) => info.prefix === environment.envId.id,
+                );
+                if (!pixiEnvironment) {
+                    traceInfo(
+                        `Failed to refresh packages: Pixi environment '${environment.name}' is missing from project info`,
+                    );
+                    return;
+                }
 
-                const before = environment.packages;
-                const after = pixiPkgsToPackages(pixiPackages, environment.envId.id);
+                try {
+                    const pixiPackages = await listPixiPackages(pixiEnvironment.name, projectPath);
 
-                environment.packages = after;
-                this.triggerOnDidChangePackages(environment, before, after);
+                    const before = environment.packages;
+                    const after = pixiPkgsToPackages(pixiPackages, environment.envId.id);
+
+                    environment.packages = after;
+                    this.triggerOnDidChangePackages(environment, before, after);
+                } catch (error) {
+                    traceInfo(`Failed to refresh packages for environment '${environment.name}': ${error}`);
+                }
             },
         );
     }
