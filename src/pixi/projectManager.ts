@@ -20,7 +20,7 @@ import {
     window,
 } from 'vscode';
 
-import { traceInfo, traceVerbose } from '../common/logging';
+import { traceError, traceInfo, traceVerbose } from '../common/logging';
 import { PixiEnvironment } from './types';
 import { listPixiPackages, pixiPkgsToPackages } from './utils';
 
@@ -90,8 +90,13 @@ export class PixiPackageManager implements PackageManager, Disposable {
 
                     environment.packages = after;
                     this.triggerOnDidChangePackages(environment, before, after);
+                    traceInfo(
+                        `Refreshed packages for '${environment.name}' in '${projectPath}': ${after.length} package(s)`,
+                    );
                 } catch (error) {
-                    traceInfo(`Failed to refresh packages for environment '${environment.name}': ${error}`);
+                    traceError(
+                        `Failed to refresh packages for environment '${environment.name}' in '${projectPath}': ${error}`,
+                    );
                 }
             },
         );

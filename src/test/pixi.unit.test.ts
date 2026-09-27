@@ -13,6 +13,7 @@ type SpawnResult = { stdout?: string; stderr?: string; exitCode?: number };
 
 const calls: SpawnCall[] = [];
 const infoMessages: string[] = [];
+const errorMessages: string[] = [];
 let configuredExecutable = 'pixi';
 let workspaceFolders: { uri: { fsPath: string } }[] = [];
 let respond: (call: SpawnCall) => SpawnResult = () => ({ exitCode: 0 });
@@ -99,13 +100,14 @@ loader._load = originalLoad;
 
 registerLogger({
     info: (message: string) => void infoMessages.push(message),
-    error: () => undefined,
+    error: (message: string) => void errorMessages.push(message),
     debug: () => undefined,
 } as unknown as Parameters<typeof registerLogger>[0]);
 
 test('an unsupported Pixi environment does not hide valid Python environments', async () => {
     calls.length = 0;
     infoMessages.length = 0;
+    errorMessages.length = 0;
     workspaceFolders = [{ uri: { fsPath: path.resolve('workspace') } }];
     const projectPath = path.resolve('workspace', 'project');
     respond = ({ args }) => {
@@ -136,12 +138,19 @@ test('an unsupported Pixi environment does not hide valid Python environments', 
     );
     assert.equal(calls.length, 4);
     assert.ok(calls.every((call) => call.options.cwd === projectPath));
-    assert.ok(infoMessages.some((message) => message.includes("Skipping Pixi environment 'foreign'")));
+    assert.ok(
+        errorMessages.some(
+            (message) =>
+                message.includes("Could not list packages for Pixi environment 'project:foreign'") &&
+                message.includes(projectPath),
+        ),
+    );
 });
 
 test('package refresh uses the Pixi environment name and keeps existing packages on failure', async () => {
     calls.length = 0;
     infoMessages.length = 0;
+    errorMessages.length = 0;
     const projectPath = path.resolve('workspace', 'project');
     const prefix = path.join(projectPath, '.pixi', 'envs', 'default');
     const packages = [{ name: 'python', version: '3.12.1' }];
@@ -164,7 +173,14 @@ test('package refresh uses the Pixi environment name and keeps existing packages
     assert.equal(environment.packages, packages);
     assert.equal(calls[0].args.at(-1), 'default');
     assert.equal(calls[0].options.cwd, projectPath);
-    assert.ok(infoMessages.some((message) => message.includes('Failed to refresh packages')));
+    assert.ok(
+        errorMessages.some((message) => message.includes('Pixi command') && message.includes('Pixi list failed')),
+    );
+    assert.ok(
+        errorMessages.some(
+            (message) => message.includes('Failed to refresh packages') && message.includes(projectPath),
+        ),
+    );
 
     respond = () => ({ stdout: JSON.stringify([{ name: 'python', version: '3.13.0', is_explicit: true }]) });
     await manager.refresh(environment);

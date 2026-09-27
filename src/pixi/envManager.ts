@@ -15,7 +15,7 @@ import {
 import { EventEmitter, LogOutputChannel, MarkdownString, ProgressLocation, ThemeIcon, Uri, window } from 'vscode';
 
 import { createDeferred, Deferred } from '../common/deferred';
-import { traceVerbose } from '../common/logging';
+import { traceInfo, traceVerbose } from '../common/logging';
 import { resolvePixiProjectPaths } from '../common/searchPaths';
 import { PIXI_MANAGER_ID } from '../common/utils';
 import { PixiEnvironment } from './types';
@@ -122,12 +122,14 @@ export class PixiEnvManager implements EnvironmentManager {
     }
 
     async set(scope: SetEnvironmentScope, environment?: PythonEnvironment) {
-        traceVerbose(`Called set with scope: ${scope}, environment: ${JSON.stringify(environment)}`);
+        const environmentName = environment?.displayName ?? environment?.envId.id ?? 'none';
+        traceVerbose(`Setting ${scope === undefined ? 'global' : 'project'} Pixi environment to '${environmentName}'`);
 
         if (scope === undefined) {
             await setGlobalEnvId(environment?.envId.id);
             this.triggerDidChangeEnvironment(undefined, this.globalEnv, environment);
             this.globalEnv = environment;
+            traceInfo(`Activated global environment '${environmentName}'`);
             return;
         }
 
@@ -150,6 +152,10 @@ export class PixiEnvManager implements EnvironmentManager {
 
             await setProjectEnvId(projectPath, environment?.envId.id);
             this.triggerDidChangeEnvironment(project.uri, oldEnv, environment);
+            const projectName = project.name ?? projectPath;
+            traceInfo(
+                `${environment ? 'Activated' : 'Cleared'} environment '${environmentName}' for project '${projectName}'`,
+            );
         }
     }
 
@@ -187,6 +193,7 @@ export class PixiEnvManager implements EnvironmentManager {
     }
 
     private async refreshAll(): Promise<void> {
+        traceInfo('Discovering Pixi environments across registered projects and search paths');
         await window.withProgress(
             {
                 location: ProgressLocation.Window,
@@ -202,6 +209,7 @@ export class PixiEnvManager implements EnvironmentManager {
 
                 const searchPathRoots = await resolvePixiProjectPaths();
                 const projectPaths = new Set([...projectMap.keys(), ...searchPathRoots]);
+                traceVerbose(`Refreshing Pixi environments for ${projectPaths.size} project path(s)`);
 
                 const changes: DidChangeEnvironmentsEventArgs = [];
 
@@ -216,6 +224,13 @@ export class PixiEnvManager implements EnvironmentManager {
                 );
 
                 this._onDidChangeEnvironments.fire(changes);
+                const environmentCount = [...this.projectToEnvs.values()].reduce(
+                    (count, envs) => count + envs.length,
+                    0,
+                );
+                traceInfo(
+                    `Discovered ${environmentCount} Pixi environment(s); ${changes.length} environment change(s)`,
+                );
 
                 const envLookup = this.buildEnvLookup();
 
@@ -254,8 +269,10 @@ export class PixiEnvManager implements EnvironmentManager {
         }
 
         const projectPath = project.uri.fsPath;
+        traceInfo(`Refreshing Pixi environments for project '${project.name ?? projectPath}'`);
         const oldEnvs = this.projectToEnvs.get(projectPath) || [];
         const newEnvs = await refreshPixi(projectPath);
+        traceInfo(`Found ${newEnvs.length} Pixi environment(s) for project '${project.name ?? projectPath}'`);
 
         this.projectToEnvs.set(projectPath, newEnvs);
         this._onDidChangeEnvironments.fire(this.diffEnvironments(oldEnvs, newEnvs));

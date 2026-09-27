@@ -8,7 +8,7 @@ import which from 'which';
 import { createDeferred } from '../common/deferred';
 import { quoteArgs, quoteStringIfNecessary } from '../common/execUtils';
 import { findPythonExecutable } from '../common/findPython';
-import { traceError, traceInfo, traceVerbose } from '../common/logging';
+import { traceError, traceVerbose } from '../common/logging';
 import { getWorkspacePersistentState } from '../common/persistentState';
 import { PIXI_MANAGER_ID, untildify } from '../common/utils';
 import { PixiEnvironment, PixiInfo, PixiPackage } from './types';
@@ -64,6 +64,8 @@ async function _runPixi(
 ): Promise<string> {
     const deferred = createDeferred<string>();
     args = quoteArgs(args);
+    const command = `${quoteStringIfNecessary(pixi)} ${args.join(' ')}`;
+    traceVerbose(`Running '${command}'${options?.cwd ? ` in '${options.cwd}'` : ''}`);
     const proc = ch.spawn(quoteStringIfNecessary(pixi), args, { shell: true, ...options });
 
     const cancelDisposable = token?.onCancellationRequested(() => {
@@ -81,7 +83,6 @@ async function _runPixi(
     proc.stderr?.on('data', (data) => {
         const d = data.toString('utf-8');
         stderr += d;
-        traceError(d.trim());
     });
     proc.on('error', (err) => {
         deferred.reject(err);
@@ -92,7 +93,9 @@ async function _runPixi(
     proc.on('close', () => {
         cancelDisposable?.dispose();
         if (exitCode !== 0) {
-            deferred.reject(new Error(`Failed to run "pixi ${args.join(' ')}":\n ${stderr}`));
+            const message = `Pixi command '${command}' failed with exit code ${exitCode ?? 'unknown'}${stderr.trim() ? `:\n${stderr.trim()}` : ''}`;
+            traceError(message);
+            deferred.reject(new Error(message));
         } else {
             deferred.resolve(stdout);
         }
@@ -138,7 +141,9 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
                 try {
                     pixiPackages = await listPixiPackages(pixiEnv.name, projectPath);
                 } catch (error) {
-                    traceInfo(`Skipping Pixi environment '${pixiEnv.name}': ${error}`);
+                    traceError(
+                        `Could not list packages for Pixi environment '${projectName}:${pixiEnv.name}' in '${projectPath}': ${error}`,
+                    );
                     return null;
                 }
 
@@ -190,7 +195,7 @@ export async function refreshPixi(projectPath: string): Promise<PixiEnvironment[
 
         return results.filter((env): env is PixiEnvironment => env !== null);
     } catch (error) {
-        traceInfo(`Failed to get pixi environments: ${error}`);
+        traceError(`Failed to discover Pixi environments in '${projectPath}': ${error}`);
         return [];
     }
 }
