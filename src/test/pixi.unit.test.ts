@@ -1,13 +1,14 @@
 import * as assert from 'node:assert/strict';
+import { spawn as realSpawn, SpawnOptions } from 'node:child_process';
 import { EventEmitter as NodeEventEmitter } from 'node:events';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { test } from 'node:test';
 
 import { PixiEnvironment } from '../pixi/types';
 
-type SpawnCall = { executable: string; args: string[]; options: { cwd?: string } };
+type SpawnCall = { executable: string; args: string[]; options: SpawnOptions };
 type SpawnResult = { stdout?: string; stderr?: string; exitCode?: number };
 
 const calls: SpawnCall[] = [];
@@ -15,6 +16,7 @@ const infoMessages: string[] = [];
 let configuredExecutable = 'pixi';
 let workspaceFolders: { uri: { fsPath: string } }[] = [];
 let respond: (call: SpawnCall) => SpawnResult = () => ({ exitCode: 0 });
+let useRealSpawn = false;
 
 class TestEventEmitter<T> {
     event = () => undefined;
@@ -43,9 +45,12 @@ const vscode = {
 };
 
 const childProcess = {
-    spawn(executable: string, args: string[], options: { cwd?: string }) {
+    spawn(executable: string, args: string[], options: SpawnOptions) {
         const call = { executable, args, options };
         calls.push(call);
+        if (useRealSpawn) {
+            return realSpawn(executable, args, options);
+        }
         const proc = new NodeEventEmitter() as NodeEventEmitter & {
             stdout: NodeEventEmitter;
             stderr: NodeEventEmitter;
@@ -191,6 +196,31 @@ test('configured Pixi paths resolve from workspaces and commands use a workspace
         configuredExecutable = '${workspaceFolder}/bin/pixi';
         assert.equal(await getPixi(), path.join(firstFolder, 'bin', 'pixi'));
     } finally {
+        configuredExecutable = 'pixi';
+        workspaceFolders = [];
+        await rm(root, { recursive: true, force: true });
+    }
+});
+
+test('a configured executable in a path with spaces can run through the shell', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'pixi executable '));
+    const executable = path.join(root, process.platform === 'win32' ? 'pixi.cmd' : 'pixi');
+    try {
+        const script =
+            process.platform === 'win32'
+                ? '@echo off\r\necho pixi-test %1\r\n'
+                : '#!/bin/sh\nprintf "pixi-test %s\\n" "$1"\n';
+        await writeFile(executable, script);
+        if (process.platform !== 'win32') {
+            await chmod(executable, 0o755);
+        }
+        configuredExecutable = executable;
+        workspaceFolders = [{ uri: { fsPath: root } }];
+        useRealSpawn = true;
+
+        assert.equal((await runPixi(['--version'])).trim(), 'pixi-test --version');
+    } finally {
+        useRealSpawn = false;
         configuredExecutable = 'pixi';
         workspaceFolders = [];
         await rm(root, { recursive: true, force: true });
